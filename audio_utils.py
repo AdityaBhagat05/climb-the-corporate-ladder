@@ -8,6 +8,7 @@ import sounddevice as sd
 import soundfile as sf
 import whisper
 from TTS.api import TTS
+import re
 
 # Global playback control
 play_lock = threading.Lock()
@@ -96,3 +97,73 @@ def text_to_speech(text: str, samplerate=22050) -> str:
 
     threading.Thread(target=play_audio).start()
     return fname
+
+def clarity_score(audio_path: str, transcript: str):
+    """
+    Analyze clarity of the user's speech using audio + transcript.
+    Returns a dict with a numeric score and feedback.
+    """
+
+    # ----------------------
+    # 1. AUDIO ANALYSIS
+    # ----------------------
+    try:
+        audio, samplerate = sf.read(audio_path)
+    except Exception as e:
+        return {"score": 0, "feedback": f"Audio error: {e}"}
+
+    # Loudness (RMS)
+    rms = np.sqrt(np.mean(audio**2))
+    loudness_db = 20 * np.log10(rms + 1e-6)  # avoid log(0)
+
+    # Duration in seconds
+    duration_sec = len(audio) / samplerate
+
+    # ----------------------
+    # 2. TRANSCRIPT ANALYSIS
+    # ----------------------
+    words = transcript.strip().split()
+    num_words = len(words)
+    wpm = (num_words / duration_sec) * 60 if duration_sec > 0 else 0
+
+    # Detect filler words
+    fillers = re.findall(r"\b(um+|uh+|like|you know)\b", transcript.lower())
+    filler_count = len(fillers)
+
+    # ----------------------
+    # 3. SCORING
+    # ----------------------
+    score = 100
+
+    # Loudness penalty (too soft or too loud)
+    if loudness_db < -30:
+        score -= 20
+        loudness_feedback = "Your voice is too soft."
+    elif loudness_db > -5:
+        score -= 10
+        loudness_feedback = "Your voice is a bit too loud."
+    else:
+        loudness_feedback = "Good voice volume."
+
+    # WPM penalty (ideal: 110–180)
+    if wpm < 100:
+        score -= 15
+        speed_feedback = "You spoke too slowly."
+    elif wpm > 190:
+        score -= 15
+        speed_feedback = "You spoke too quickly."
+    else:
+        speed_feedback = "Good speaking pace."
+
+    # Filler penalty
+    if filler_count > 3:
+        score -= filler_count * 2
+        filler_feedback = f"You used filler words {filler_count} times."
+    else:
+        filler_feedback = "Minimal filler words used."
+
+    score = max(0, score)  # never below 0
+
+    feedback = f"{loudness_feedback} {speed_feedback} {filler_feedback}"
+
+    return {"score": score, "feedback": feedback}
