@@ -1,41 +1,42 @@
 
-
+#imports
 from typing import TypedDict, Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from dotenv import load_dotenv
 import os
 import time
 import json
 import re
-
-# local utilities
 from audio_utils import record_audio, speech_to_text, text_to_speech
 from camera_utils import detect_posture_and_confidence
 from langchain_ollama import ChatOllama
 
+#globals
 load_dotenv()
-
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], ...]
     posture_history: list
     start_time: float
     evaluation_done: bool
     pass_meter: int
-
-# --- Globals ---
 llm = ChatOllama(model="mistral:instruct", temperature=0.6)
 
-# --- Nodes ---
-
+DB_PATH = "checkpoints.sqlite"
+THREAD_ID = "user:aditya" 
+config = {"configurable": {"thread_id": THREAD_ID}}
+#Nodes
 def stt_node(state: AgentState) -> AgentState:
-    audio_file = record_audio()
-    text = speech_to_text(audio_file)
-    try:
-        os.remove(audio_file)
-    except Exception:
-        pass
-
+    # audio_file = record_audio()
+    # text = speech_to_text(audio_file)
+    # try:
+    #     os.remove(audio_file)
+    # except Exception:
+    #     pass
+    #Testing
+    text=input("Enter text:")
     
     new_state = {
         "messages": state["messages"],
@@ -275,15 +276,14 @@ def final_evaluation(state: AgentState) -> AgentState:
     }
 
 
-# --- Graph ---
-
+#Graph
 graph = StateGraph(AgentState)
 graph.add_node("stt", stt_node)
 graph.add_node("camera", posture_info_node)
 graph.add_node("llm", llm_node)
 graph.add_node("tts", tts_node)
 graph.add_node("evaluation", evaluation_node)
-graph.add_node("final_evaluation", final_evaluation)
+# graph.add_node("final_evaluation", final_evaluation)
 
 # edges
 graph.add_edge(START, "stt")
@@ -291,20 +291,7 @@ graph.add_edge("stt", "camera")
 graph.add_edge("camera", "llm")
 graph.add_edge("llm", "tts")
 graph.add_edge("tts", "evaluation")
-
-graph.add_conditional_edges(
-    "evaluation",
-    lambda state: ("continue" if continue_conv(state) == "continue" else "end"),
-    {
-        "continue": "stt",
-        "end": "final_evaluation",
-    },
-)
-
-graph.add_edge("final_evaluation", END)
-
-app = graph.compile()
-
+graph.add_edge("evaluation", END)
 if __name__ == "__main__":
     meeting_topic = "is AI a fad?"
 
@@ -333,8 +320,14 @@ Instructions for the roleplay:
         "pass_meter": 0
     }
 
-    final_state = app.invoke(seed)
+with SqliteSaver.from_conn_string(DB_PATH) as memory:
+    app = graph.compile(checkpointer=memory)
+    # final_state = app.invoke("messages":SystemMessage(content=f"Continue your conversation"),config,)
+    new_input = {
+    "messages": [SystemMessage(content="Continue your conversation")]
+    }
 
+    final_state = app.invoke(new_input, config)
     final_pass_meter = final_state.get("pass_meter", 0)
     print(f"\n--- Final Result ---")
     print(f"Pass meter: {final_pass_meter}")
@@ -343,3 +336,5 @@ Instructions for the roleplay:
     else:
         print("Overall: FAILED")
     print("Conversation finished.")
+
+
