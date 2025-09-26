@@ -1,5 +1,3 @@
-
-
 from typing import TypedDict, Annotated, Sequence
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
@@ -137,5 +135,3 @@ if __name__ == "__main__":
         [SystemMessage(content="You are a coach to help users boost their confidence help them with public speaking. Monitor their posture and conversation throughout you conversation and give comments regarding it. You will be given posture, wether their gaze is looking at the camera and wether their confident based on their camera along with the human message. Help them based only on that. Try to get improve their confidence through this conversation")]}
     app.invoke(seed)
     print("Conversation finished.")
-
-
