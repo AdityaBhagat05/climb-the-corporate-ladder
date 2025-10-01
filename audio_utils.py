@@ -243,3 +243,32 @@ def clarity_score(audio_path: str, transcript: str):
     feedback = f"{loudness_feedback} {speed_feedback} {filler_feedback}"
 
     return {"score": score, "feedback": feedback}
+
+
+def speak(text: str, samplerate: int = 22050, delete_after: bool = True) -> str:
+    """
+    Convert `text` to speech using your tts_engine,
+    play it once, and optionally delete the temp file.
+
+    Returns the path to the generated WAV.
+    """
+    if not text or not text.strip():
+        raise ValueError("Text must be non-empty")
+
+    # create a unique temp file
+    wav_path = os.path.join(
+        tempfile.gettempdir(), f"tts_{int(time.time()*1000)}.wav"
+    )
+
+    # synthesize
+    tts_engine.tts_to_file(text=text, file_path=wav_path)
+
+    # play it
+    data, sr = sf.read(wav_path, dtype="float32")
+    sd.play(data, sr)
+    sd.wait()  # block until playback is done
+
+    if delete_after:
+        os.remove(wav_path)
+
+    return wav_path
