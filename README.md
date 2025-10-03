@@ -108,7 +108,7 @@ End
 - Privacy concerns with voice/video data  
 - AI accuracy for diverse accents  
 - High dev time for branching storylines  
-- Dependency on external APIs  
+- Dependency on large local STT and TTS models 
 
 ---
 ## How to Run Our Game
