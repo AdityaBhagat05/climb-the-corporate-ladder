@@ -10,7 +10,6 @@
 # Climb the Corporate Ladder
 
 Welcome to the **future of public speaking training**.  
-Climb the Corporate Ladder is a **Gen AI–powered gamified public speaking training experience** with multiple levels, challenges, and mini-games — designed to turn even the most hesitant speaker into a confident professional.
 
 ---
 
@@ -33,7 +32,7 @@ Climb the Corporate Ladder is a **Gen AI–powered gamified public speaking trai
 ---
 
 ## About the Project
-Climb the Corporate Ladder is a **gamified training program** that blends **AI-powered feedback, immersive environments, and mini-games** to help individuals improve their public speaking and communication skills.  
+Climb the Corporate Ladder is a **gamified training program** that blends **AI-powered feedback, immersive environments, and mini-games** to help individuals improve their public speaking and communication skills through high pressure test scenarios based on real life along with mini games and fun activities.  
 
 ---
 
@@ -49,15 +48,15 @@ This project is designed for:
 Unlike traditional workshops and online courses, this project:  
 - Adapts to individual needs  
 - Provides **real-time AI feedback**  
-- Gamifies the learning process with engaging scenarios  
+- Gamifies the learning process with engaging scenarios
 
 ---
 
 ## Highlights
-- **LangGraph AI Agents** for dynamic feedback  
-- **AI confidence scoring** with measurable progress  
-- Evaluates **tone, clarity, and assertiveness**  
-- **Posture, body language, and facial expression analysis** via video integration  
+- **LangGraph GenAI Agents** create adaptable and dynamic high pressure scenarios to test users
+- **AI evaluation, scoring and feedback** provide measurable results and areas of improvement to users.
+- Evaluates **Voice clarity,tone,Posture and body language** for comprehensive improvement.
+- Measurable results. Based on local tests conducted with a focus group of 10, an average self-assessed **15% improvement** was seen.
 
 ---
 
@@ -112,6 +111,14 @@ End
 - Dependency on large local STT and TTS models 
 
 ---
+
+## Scalability
+- Currently backend is running locally, which can be shifted to a cloud service for easy adoptability for low end systems
+- The Game can be expanded by adding more unique and diverse minigames
+- More powerful Speech-to-Text and Text-to-Speech  systems can be used for tolerance with wider range of accents and multiple voices.
+  
+---
+
 ## How to Run Our Game
 
 1. **Download the Code**
