@@ -37,7 +37,7 @@ llm = GoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.0)
 isPPT = True
 mp_pose = mp.solutions.pose  
 STALE_SECONDS=20
-
+RANDOM_VOICES = ["p225", "p227", "p239"]
 def _msg_content(m):
     if isinstance(m, BaseMessage):
         return getattr(m, "content", "") or ""
@@ -45,17 +45,13 @@ def _msg_content(m):
         return m.get("content") or m.get("text") or m.get("body") or ""
     return str(m) if m is not None else ""
 
-# helper: find the first human message (supports objects and serialized dicts)
 def _find_first_human(msgs):
     for m in msgs:
-        # object-style HumanMessage
         if isinstance(m, HumanMessage):
             return m
-        # serialized dict-style
         if isinstance(m, dict):
             typ = (m.get("type") or m.get("_type") or m.get("message_type") or "").lower()
             if "human" in typ or "user" in typ:
-                # return a HumanMessage object for consistent downstream handling
                 return HumanMessage(content=_msg_content(m))
     return None
 
@@ -260,45 +256,20 @@ def llm_node(state: publicAgentState) -> publicAgentState:
         "meeting_topic": state.get("meeting_topic", ""),
     }
 
-# def posture_info_node(state: publicAgentState) -> publicAgentState:
-#     if "posture_history" not in state:
-#         state["posture_history"] = []
-#     try:
-#         data = detect_posture_and_confidence()
-#     except Exception as e:
-#         data = {"posture": "unknown", "gaze": "unknown", "confidence": "unknown", "arms": "unknown", "head_tilt": None}
-#         print("Posture detection error:", e)
-#     state["posture_history"].append(data)
-#     print(f"[Posture Info] {data}")
-#     return {
-#         "messages": state["messages"],
-#         "posture_history": state["posture_history"],
-#         "start_time": state.get("start_time", time.time()),
-#         "evaluation_done": state.get("evaluation_done", False),
-#         "pass_meter": state.get("pass_meter", 0),
-#         "turns": state.get("turns", 0),
-#         "last_question": state.get("last_question", ""),
-#         "last_user_response": state.get("last_user_response", ""),
-#         "last_transcript": state.get("last_transcript", ""),
-#         "max_turns": state.get("max_turns", 10),
-#     }
 
 def posture_info_node(state: Dict) -> Dict:
     """
     Single-tick node: grab one frame (if camera is available), run mediapipe pose once,
     compute posture, and update state. No UDP involved.
     """
-    # ensure minimal keys exist
     state.setdefault("posture_history", [])
     state.setdefault("messages", [])
     state.setdefault("audio_history", [])
     state.setdefault("start_time", time.time())
 
-    # lazy-init the camera capture and mediapipe session
     if "posture_cap" not in state:
         try:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) if hasattr(cv2, "CAP_DSHOW") else cv2.VideoCapture(0)
-            # small safety: set a modest resolution to reduce CPU
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             state["posture_cap"] = cap
@@ -315,16 +286,13 @@ def posture_info_node(state: Dict) -> Dict:
 
     received_any = False
 
-    # Try to grab a single frame and process it.
     if cap is None or not cap.isOpened() or pose_session is None:
-        # can't use camera → behave as no-new-data
         print("[posture_info_node] camera not available this tick")
     else:
         ret, frame = cap.read()
         if not ret:
             print("[posture_info_node] camera read failed this tick")
         else:
-            # convert and run mediapipe once (same as before)
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image.flags.writeable = False
             results = pose_session.process(image)
@@ -335,7 +303,6 @@ def posture_info_node(state: Dict) -> Dict:
                     landmarks = results.pose_landmarks.landmark
                     payload, angle = _classify_from_landmarks(landmarks)
                     now = time.time()
-                    # replicate structure you used previously:
                     if payload == "upright":
                         data = {
                             "posture": "upright",
@@ -358,23 +325,18 @@ def posture_info_node(state: Dict) -> Dict:
                 except Exception as e:
                     print("[posture_info_node] processing error:", repr(e))
             else:
-                # No landmarks detected — treat as no new packet this tick
                 print("[posture_info_node] no landmarks detected this tick")
 
-    # Only append to history if we actually received new data this tick.
     if received_any:
         state.setdefault("posture_history", []).append(state["last_posture"])
     else:
-        # treat last posture as fresh for a short time window (same semantics as before)
         last = state.get("last_posture")
         if last and (time.time() - last.get("received_time", 0.0) < STALE_SECONDS):
             state.setdefault("posture_history", []).append(last)
             print(f"[posture_info_node] (fresh) {last}")
         else:
-            # do not append a spurious 'unknown'
             pass
 
-    # Return the snapshot expected by the rest of your system
     return {
         "messages": state["messages"],
         "posture_history": state["posture_history"],

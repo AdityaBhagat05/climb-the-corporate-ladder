@@ -38,6 +38,8 @@ llm=GoogleGenerativeAI(model="gemini-2.5-flash",temperature=0.6)
 
 mp_pose = mp.solutions.pose  
 STALE_SECONDS=20
+BOSS_FEMALE = "p231"
+FRIENDLY_COWORKER = "p248"
 def llm_node(state: AgentState) -> AgentState:
     messages = list(state["messages"])
     current_pass_meter = state.get("pass_meter", 0)
@@ -211,25 +213,7 @@ def llm_node(state: AgentState) -> AgentState:
 
 
 
-# def posture_info_node(state: AgentState) -> AgentState:
-#     if "posture_history" not in state:
-#         state["posture_history"] = []
 
-#     try:
-#         data = detect_posture_and_confidence()
-#     except Exception as e:
-#         data = {"posture": "unknown", "gaze": "unknown", "confidence": "unknown", "arms": "unknown", "head_tilt": None}
-#         print("Posture detection error:", e)
-
-#     state["posture_history"].append(data)
-#     print(f"[Posture Info] {data}")
-#     return {
-#         "messages": state["messages"], 
-#         "posture_history": state["posture_history"],
-#         "start_time": state.get("start_time", time.time()), 
-#         "evaluation_done": state.get("evaluation_done", False),
-#         "pass_meter": state.get("pass_meter", 0)
-#     }
 
 def posture_info_node(state: Dict) -> Dict:
     """

@@ -3,8 +3,7 @@ import cv2
 import mediapipe as mp
 import math
 from typing import Dict, Any, Tuple
-# constants
-STALE_SECONDS = 2.0  # keep same semantics as your previous code
+STALE_SECONDS = 2.0  
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
