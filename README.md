@@ -113,35 +113,41 @@ End
 ---
 ## ▶️ How to Run Our Game
 
-1. **Download the code**
+1. **Download the Code**
    - Go to the GitHub repository and download the project as a `.zip` file.
    - Unzip the file and place it in a folder of your choice.
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv .venv
-   ```
-
-3. **Activate the virtual environment**
+2. **Create a Virtual Environment**
    - On **Windows**:
      ```bash
-     .venv/Scripts/activate
+     python -m venv .venv
+     ```
+   - On **Mac/Linux**:
+     ```bash
+     python3 -m venv .venv
+     ```
+
+3. **Activate the Virtual Environment**
+   - On **Windows**:
+     ```bash
+     .venv\Scripts\activate
      ```
    - On **Mac/Linux**:
      ```bash
      source .venv/bin/activate
      ```
 
-4. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+4. **Install Dependencies**
+   - Run the following command:
+     ```bash
+     pip install -r requirements.txt
+     ```
 
 5. **Get a Google Gemini API Key**
    - Go to [Google AI Studio](https://aistudio.google.com/) and click **Get API Key**.
-   - Follow the instructions to create a free API key.
+   - Follow the instructions to generate a free API key.
 
-6. **Create a `.env` file**
+6. **Create a `.env` File**
    - Inside the game folder, create a new file named `.env`.
    - Paste your API key in the following format:
      ```
@@ -149,23 +155,28 @@ End
      ```
 
 7. **Install OpenAI Whisper**
-   - Download from [OpenAI Whisper GitHub Repo](https://github.com/openai/whisper).
+   - Download and install from the official repository:  
+     [OpenAI Whisper GitHub Repo](https://github.com/openai/whisper)
 
-8. **Start the backend server**
-   ```bash
-   uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
-   ```
+8. **Start the Backend Server**
+   - On **Windows/Mac/Linux**:
+     ```bash
+     uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
+     ```
 
-9. **Run the game logic**
-   - In another terminal, navigate to the project folder and type:
+9. **Run the Game Logic**
+   - On **Windows/Mac/Linux**:
      ```bash
      python nre.py
      ```
 
-10. **Launch the game**
-    - Double-click the Unity `.exe` file to start the game.  
-    - Enjoy your fun learning experience!
+10. **Launch the Game**
+    - On **Windows/Mac/Linux**:
+      - Navigate to the `Unity Build` folder.
+      - Double-click the game executable (`.exe` on Windows, `.app` on Mac, or Linux build file).
+      - Enjoy your fun learning experience!
 
+---
 
 ## 📂 File Structure
 ```
