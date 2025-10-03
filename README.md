@@ -15,19 +15,20 @@ Climb the Corporate Ladder is a **Gen AI–powered gamified public speaking trai
 ---
 
 ## Table of Contents
-- [About the Project](#-about-the-project)
-- [Who Is It For](#-who-is-it-for)
-- [What Makes It Different](#-what-makes-it-different)
-- [Highlights](#-highlights)
-- [How It Works](#-how-it-works)
-- [User Experience](#-user-experience)
-- [Demo Game Flow](#-demo-game-flow)
-- [Feasibility](#-feasibility)
-- [Challenges & Risks](#-challenges--risks)
-- [How to Run Our Game](#-how-to-run-our-game)
-- [File Structure](#-file-structure)
-- [Tech Stack](#-tech-stack)
-- [Contributing](#-contributing)
+- [About the Project](#about-the-project)
+- [Who Is It For](#who-is-it-for)
+- [What Makes It Different](#what-makes-it-different)
+- [Highlights](#highlights)
+- [How It Works](#how-it-works)
+- [User Experience](#user-experience)
+- [Demo Game Flow](#demo-game-flow)
+- [Feasibility](#feasibility)
+- [Challenges & Risks](#challenges--risks)
+- [How to Run Our Game](#how-to-run-our-game)
+- [File Structure](#file-structure)
+- [Tech Stack](#tech-stack)
+- [Contributing](#contributing)
+
 
 ---
 
