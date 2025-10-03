@@ -1,494 +1,4 @@
 
-# from typing import TypedDict, Annotated, Sequence
-# from langgraph.graph import StateGraph, START, END
-# from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
-# from langgraph.checkpoint.sqlite import SqliteSaver
-# from dotenv import load_dotenv
-# import os
-# import time
-# from langchain_ollama import ChatOllama
-# from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect
-# from fastapi.responses import FileResponse, JSONResponse
-# from convince_boss import graph, AgentState
-# from public_speaking import publicAgentState, public_graph
-# import tempfile
-# import threading
-# import time
-# import queue
-# import numpy as np
-# import sounddevice as sd
-# import soundfile as sf
-# from audio_utils import speech_to_text, text_to_speech, speak
-# import asyncio, aiofiles
-# from concurrent.futures import ThreadPoolExecutor
-# load_dotenv()
-# app = FastAPI()
-
-# _SESSION_DB: dict = {}
-# DB_EXPIRY_SECONDS = 120.0 
-
-# # DB_PATH_CONV = "checkpointsconv.sqlite"
-# # THREAD_ID_CONV = "test14" 
-# # config_conv = {"configurable": {"thread_id": THREAD_ID_CONV}}
-
-# # DB_PATH_PUB = "checkpointspub.sqlite"
-# # THREAD_ID_PUBLIC= "publictest8"
-# # config_public={"configurable": {"thread_id": THREAD_ID_PUBLIC}}
-
-# # DB_PATH_NPC = "checkpointsnpc.sqlite"
-# # THREAD_ID_NPC = "npctest7" 
-# # config_npc = {"configurable": {"thread_id": THREAD_ID_NPC}}
-
-# def _get_or_create_session_db(thread_key: str, prefix: str, force_new: bool = False) -> str:
-#     """
-#     Return a sqlite path for a given thread_key.
-#     If force_new=True, always create a new file and schedule cleanup of the old.
-#     Otherwise reuse existing file if younger than DB_EXPIRY_SECONDS.
-#     """
-#     now = time.time()
-#     entry = _SESSION_DB.get(thread_key)
-
-#     if not force_new and entry:
-#         path, created = entry
-#         if (now - created) < DB_EXPIRY_SECONDS and os.path.exists(path):
-#             return path
-#         # expired -> try remove now (best-effort) and fallthrough to create new
-#         try:
-#             os.remove(path)
-#         except Exception:
-#             pass
-#         _SESSION_DB.pop(thread_key, None)
-
-#     # create a new temp sqlite file (unique)
-#     fd, path = tempfile.mkstemp(prefix=f"{prefix}_{thread_key}_", suffix=".sqlite")
-#     os.close(fd)
-#     _SESSION_DB[thread_key] = (path, now)
-
-#     # schedule cleanup after expiry (best-effort background timer)
-#     def _cleanup(p=path, k=thread_key):
-#         try:
-#             os.remove(p)
-#         except Exception:
-#             pass
-#         _SESSION_DB.pop(k, None)
-
-#     t = threading.Timer(DB_EXPIRY_SECONDS, _cleanup)
-#     t.daemon = True
-#     t.start()
-#     return path
-
-# def _delete_session_db(thread_key: str):
-#     """Immediate deletion of a session DB (best-effort)."""
-#     entry = _SESSION_DB.pop(thread_key, None)
-#     if entry:
-#         path, _ = entry
-#         try:
-#             os.remove(path)
-#         except Exception:
-#             pass
-
-# @app.post("/convince_boss")
-# async def convince_boss(audioFile: UploadFile = File(...)):
-#     meeting_topic = "is AI a fad?"
-
-#     contents = await audioFile.read()
-#     text = speech_to_text(contents)
-
-#     seed: AgentState = {
-#         "messages": [
-#             SystemMessage(content=f"""
-# You are an NPC in an educational video game to help young adults learn public speaking in the corporate world. 
-# You are playing the role of the boss of the user. 
-# The user has to try to convince you to let them present in an important meeting. 
-# The topic of the meeting is '{meeting_topic}'.
-
-# Instructions for the roleplay:
-# - Your tone should adapt based on the user's performance (pass_meter value)
-# - Respond only with dialogue, as if you are speaking directly to the user.  
-# - Do NOT include stage directions, narration, or descriptions like (leans back) or *smiles*.  
-# - Be firm and direct. Give constructive, actionable feedback in short sentences.
-# - Push back, challenge their arguments, and make them defend themselves.  
-# - Keep your responses very short and to the point — no more than 1-2 sentences.
-# - If the user's performance is poor (negative pass_meter), be increasingly rude and dismissive.
-# - Use 1 or 2 short sentences only in your response.
-# """), HumanMessage(content=text),
-#         ],
-#         "posture_history": [],
-#         "evaluation_done": False,
-#         "start_time": time.time(),
-#         "pass_meter": 0
-#     }
-
-#     DB_PATH_CONV = _get_or_create_session_db(THREAD_ID_CONV, "checkpointsconv")
-#     with SqliteSaver.from_conn_string(DB_PATH_CONV) as memory:
-#         graph_app = graph.compile(checkpointer=memory)
-#         snapshot = memory.get(config_conv)
-#         if snapshot:
-#             previous_state = dict(snapshot.get("channel_values", {}))
-
-#             def _reconstruct_message(m):
-#                 if isinstance(m, BaseMessage):
-#                     return m
-#                 if isinstance(m, dict):
-#                     typ = m.get("type") or m.get("_type") or m.get("message_type")
-#                     content = m.get("content") or m.get("text") or m.get("body")
-#                     if typ:
-#                         typ = typ.lower()
-#                         if "system" in typ:
-#                             return SystemMessage(content=content or "")
-#                         if "human" in typ:
-#                             return HumanMessage(content=content or "")
-#                         if "ai" in typ or "assistant" in typ:
-#                             return AIMessage(content=content or "")
-#                 return m
-
-#             msgs = previous_state.get("messages", [])
-#             msgs = [_reconstruct_message(m) for m in msgs]
-#             msgs.append(HumanMessage(content=text))
-#             previous_state["messages"] = msgs
-
-#             start_time = previous_state.get("start_time", seed["start_time"])
-#             elapsed = time.time() - start_time
-#             if elapsed > 120: 
-#                 final_pass_meter = previous_state.get("pass_meter", 0)
-#                 timeout_msg = f"I'm out of time. Final pass meter: {final_pass_meter}"
-#                 print("[convince_boss] TIMEOUT:", timeout_msg)
-
-#                 try:
-#                     text_to_speech(timeout_msg)
-#                 except Exception as e:
-#                     print("[convince_boss] TTS on timeout failed:", e)
-
-#                 sucess = final_pass_meter >= 0
-#                 return {
-#                     "text_response": timeout_msg,
-#                     "sucess": sucess,
-#                     "pass_meter": final_pass_meter
-#                 }
-
-#             final_state = graph_app.invoke(previous_state, config_conv)
-#         else:
-#             print("Starting new conversation...")
-#             final_state = graph_app.invoke(seed, config_conv)
-
-#         boss_reply = final_state["messages"][-1].content
-
-#         final_pass_meter = final_state.get("pass_meter", 0)
-#         print(f"\n--- Final Result ---")
-#         print(f"Pass meter: {final_pass_meter}")
-#         sucess = final_pass_meter >= 0
-#         print("Overall:", "PASSED" if sucess else "FAILED")
-#         print("Conversation finished.")
-
-#         return {
-#             "text_response": boss_reply,
-#             "sucess": sucess,
-#             "pass_meter": final_pass_meter
-#         }
-    
-
-
-
-
-# # @app.post("/public_speaking")
-# # async def public_speaking(audioFile: UploadFile = File(...)):
-# #     meeting_topic = "is AI a fad?"
-# #     max_interactions = 5  # <-- use 5 interactions
-
-# #     contents = await audioFile.read()
-# #     text = speech_to_text(contents)
-# #     public_seed: publicAgentState = {
-# #         "messages": [
-# #         ],
-# #         "posture_history": [],
-# #         "evaluation_done": False,
-# #         "start_time": time.time(),
-# #         "pass_meter": 0,
-# #         "turns": 0,
-# #         "last_question": "",
-# #         "last_user_response": "",
-# #         "last_transcript": "",
-# #         "max_turns": max_interactions,  # <-- reflect the 5-interaction limit
-# #         "meeting_topic": meeting_topic,
-# #     }
-
-# #     with SqliteSaver.from_conn_string(DB_PATH_PUB) as memory:
-# #         graph_app = public_graph.compile(checkpointer=memory)
-# #         snapshot = memory.get(config_public)
-
-# #         if snapshot:
-# #             previous_state = dict(snapshot.get("channel_values", {}))
-
-# #             def _reconstruct_message(m):
-# #                 if isinstance(m, BaseMessage):
-# #                     return m
-# #                 if isinstance(m, dict):
-# #                     typ = m.get("type") or m.get("_type") or m.get("message_type")
-# #                     content = m.get("content") or m.get("text") or m.get("body")
-# #                     if typ:
-# #                         typ = typ.lower()
-# #                         if "system" in typ:
-# #                             return SystemMessage(content=content or "")
-# #                         if "human" in typ:
-# #                             return HumanMessage(content=content or "")
-# #                         if "ai" in typ or "assistant" in typ:
-# #                             return AIMessage(content=content or "")
-# #                 return m
-
-# #             msgs = previous_state.get("messages", [])
-# #             msgs = [_reconstruct_message(m) for m in msgs]
-# #             msgs.append(HumanMessage(content=text))
-# #             previous_state["messages"] = msgs
-
-# #             # Use interactions (turns) instead of elapsed time
-# #             current_turns = int(previous_state.get("turns", 0))
-# #             if current_turns >= max_interactions:
-# #                 final_pass_meter = previous_state.get("pass_meter", 0)
-# #                 timeout_msg = f"Well thats it. Final pass meter: {final_pass_meter}"
-# #                 print("[public_speaking] MAX INTERACTIONS:", timeout_msg)
-
-# #                 try:
-# #                     text_to_speech(timeout_msg)
-# #                 except Exception as e:
-# #                     print("[public_speaking] TTS on max-interactions failed:", e)
-
-# #                 sucess = final_pass_meter >= 0
-# #                 return {
-# #                     "text_response": timeout_msg,
-# #                     "sucess": sucess,
-# #                     "pass_meter": final_pass_meter
-# #                 }
-
-# #             # still allowed to continue — invoke the graph
-# #             final_state = graph_app.invoke(previous_state, config_public)
-# #         else:
-# #             print("Starting new conversation...")
-# #             final_state = graph_app.invoke(public_seed, config_public)
-
-# #         audience_reply = final_state["messages"][-1].content
-
-# #         final_pass_meter = final_state.get("pass_meter", 0)
-# #         print(f"\n--- Final Result ---")
-# #         print(f"Excitement meter: {final_pass_meter}")
-# #         sucess = final_pass_meter >= 0
-# #         print("Overall:", "PASSED" if sucess else "FAILED")
-# #         print("Conversation finished.")
-
-# #         return {
-# #             "text_response": audience_reply,
-# #             "sucess": sucess,
-# #             "Excitement_meter": final_pass_meter
-# #         }
-
-# @app.post("/public_speaking")
-# async def public_speaking(audioFile: UploadFile = File(...)):
-#     meeting_topic = "is AI a fad?"
-#     max_interactions = 5  # <-- use 5 interactions
-
-#     contents = await audioFile.read()
-#     text = speech_to_text(contents)
-#     public_seed: publicAgentState = {
-#         "messages": [],
-#         "posture_history": [],
-#         "evaluation_done": False,
-#         "start_time": time.time(),
-#         "pass_meter": 0,
-#         "turns": 0,
-#         "last_question": "",
-#         "last_user_response": "",
-#         "last_transcript": "",
-#         "max_turns": max_interactions,
-#         "meeting_topic": meeting_topic,
-#     }
-
-#     # Loop to allow deleting an expired-by-turns DB and creating a fresh one.
-#     while True:
-#         DB_PATH_PUB = _get_or_create_session_db(THREAD_ID_PUBLIC, "checkpointspub")
-#         with SqliteSaver.from_conn_string(DB_PATH_PUB) as memory:
-#             graph_app = public_graph.compile(checkpointer=memory)
-#             snapshot = memory.get(config_public)
-
-#             # If a snapshot exists, check the stored 'turns' and expire by turns if needed
-#             if snapshot:
-#                 prev = dict(snapshot.get("channel_values", {}))
-#                 stored_turns = int(prev.get("turns", 0) or 0)
-#                 # If the conversation already reached max_interactions, expire & recreate
-#                 if stored_turns >= max_interactions:
-#                     print(f"[public_speaking] session reached max turns ({stored_turns}); resetting session DB.")
-#                     # close context (with will exit), delete the file and loop to create new DB
-#                     _delete_session_db(THREAD_ID_PUBLIC)
-#                     continue  # while -> create a fresh DB and re-open
-#             # If we get here either snapshot is absent or still under max_interactions -> proceed
-#             break
-
-#     # Now open the (possibly-new) DB and proceed with normal resume-or-start semantics
-#     DB_PATH_PUB = _get_or_create_session_db(THREAD_ID_PUBLIC, "checkpointspub")
-#     with SqliteSaver.from_conn_string(DB_PATH_PUB) as memory:
-#         graph_app = public_graph.compile(checkpointer=memory)
-#         snapshot = memory.get(config_public)
-
-#         if snapshot:
-#             previous_state = dict(snapshot.get("channel_values", {}))
-
-#             def _reconstruct_message(m):
-#                 if isinstance(m, BaseMessage):
-#                     return m
-#                 if isinstance(m, dict):
-#                     typ = m.get("type") or m.get("_type") or m.get("message_type")
-#                     content = m.get("content") or m.get("text") or m.get("body")
-#                     if typ:
-#                         typ = typ.lower()
-#                         if "system" in typ:
-#                             return SystemMessage(content=content or "")
-#                         if "human" in typ:
-#                             return HumanMessage(content=content or "")
-#                         if "ai" in typ or "assistant" in typ:
-#                             return AIMessage(content=content or "")
-#                 return m
-
-#             msgs = previous_state.get("messages", [])
-#             msgs = [_reconstruct_message(m) for m in msgs]
-#             msgs.append(HumanMessage(content=text))
-#             previous_state["messages"] = msgs
-
-#             # Use interactions (turns) instead of elapsed time
-#             current_turns = int(previous_state.get("turns", 0))
-#             if current_turns >= max_interactions:
-#                 final_pass_meter = previous_state.get("pass_meter", 0)
-#                 timeout_msg = f"Well thats it. Final pass meter: {final_pass_meter}"
-#                 print("[public_speaking] MAX INTERACTIONS:", timeout_msg)
-
-#                 try:
-#                     text_to_speech(timeout_msg)
-#                 except Exception as e:
-#                     print("[public_speaking] TTS on max-interactions failed:", e)
-
-#                 sucess = final_pass_meter >= 0
-#                 return {
-#                     "text_response": timeout_msg,
-#                     "sucess": sucess,
-#                     "pass_meter": final_pass_meter
-#                 }
-
-#             # still allowed to continue — invoke the graph
-#             final_state = graph_app.invoke(previous_state, config_public)
-#         else:
-#             print("Starting new conversation...")
-#             final_state = graph_app.invoke(public_seed, config_public)
-
-#         audience_reply = final_state["messages"][-1].content
-
-#         final_pass_meter = final_state.get("pass_meter", 0)
-#         print(f"\n--- Final Result ---")
-#         print(f"Excitement meter: {final_pass_meter}")
-#         sucess = final_pass_meter >= 0
-#         print("Overall:", "PASSED" if sucess else "FAILED")
-#         print("Conversation finished.")
-
-#         return {
-#             "text_response": audience_reply,
-#             "sucess": sucess,
-#             "Excitement_meter": final_pass_meter
-#         }
-
-
-# @app.post("/play_npc")
-# async def play_npc(audioFile: UploadFile = File(...)):
-#     meeting_topic = "is AI a fad?"
-
-#     contents = await audioFile.read()
-#     text = speech_to_text(contents)
-
-#     seed: AgentState = {
-#         "messages": [
-#             SystemMessage(content=f"""
-# You are an NPC in an educational video game to help young adults learn public speaking in the corporate world. 
-# You are playing the role of the coworker of the user. 
-# you have to give hints to the user regarding an important upcoming meeting. 
-# The topic of the meeting is '{meeting_topic}'.
-
-# Instructions for the roleplay:
-# - Your tone should adapt based on the user's performance (pass_meter value)
-# - Respond only with dialogue, as if you are speaking directly to the user.  
-# - Do NOT include stage directions, narration, or descriptions like (leans back) or *smiles*.  
-# - Be friendly and fun, but formal.
-# - Keep your responses very short and to the point — no more than 1-2 sentences.
-# - If the user's performance is poor (negative pass_meter), be increasingly rude and dismissive.
-# - Use 1 or 2 short sentences only in your response.
-# """), HumanMessage(content=text),
-#         ],
-#         "posture_history": [],
-#         "evaluation_done": False,
-#         "start_time": time.time(),
-#         "pass_meter": 0
-#     }
-
-#     DB_PATH_NPC = _get_or_create_session_db(THREAD_ID_NPC, "checkpointsnpc")
-#     with SqliteSaver.from_conn_string(DB_PATH_NPC) as memory:
-#         graph_app = graph.compile(checkpointer=memory)
-#         snapshot = memory.get(config_npc)
-
-#         if snapshot:
-#             previous_state = dict(snapshot.get("channel_values", {}))
-
-#             def _reconstruct_message(m):
-#                 if isinstance(m, BaseMessage):
-#                     return m
-#                 if isinstance(m, dict):
-#                     typ = m.get("type") or m.get("_type") or m.get("message_type")
-#                     content = m.get("content") or m.get("text") or m.get("body")
-#                     if typ:
-#                         typ = typ.lower()
-#                         if "system" in typ:
-#                             return SystemMessage(content=content or "")
-#                         if "human" in typ:
-#                             return HumanMessage(content=content or "")
-#                         if "ai" in typ or "assistant" in typ:
-#                             return AIMessage(content=content or "")
-#                 return m
-
-#             msgs = previous_state.get("messages", [])
-#             msgs = [_reconstruct_message(m) for m in msgs]
-#             msgs.append(HumanMessage(content=text))
-#             previous_state["messages"] = msgs
-
-#             start_time = previous_state.get("start_time", seed["start_time"])
-#             elapsed = time.time() - start_time
-#             if elapsed > 120: 
-#                 final_pass_meter = previous_state.get("pass_meter", 0)
-#                 timeout_msg = f"I have to run. See you later!"
-#                 print("[convince_boss] TIMEOUT:", timeout_msg)
-
-#                 try:
-#                     text_to_speech(timeout_msg)
-#                 except Exception as e:
-#                     print("[convince_boss] TTS on timeout failed:", e)
-
-#                 sucess = final_pass_meter >= 0
-#                 return {
-#                     "text_response": timeout_msg,
-#                     "sucess": sucess,
-#                     "pass_meter": final_pass_meter
-#                 }
-
-#             final_state = graph_app.invoke(previous_state, config_npc)
-#         else:
-#             print("Starting new conversation...")
-#             final_state = graph_app.invoke(seed, config_npc)
-
-#         boss_reply = final_state["messages"][-1].content
-
-#         final_pass_meter = final_state.get("pass_meter", 0)
-#         print(f"\n--- Final Result ---")
-#         print(f"Pass meter: {final_pass_meter}")
-#         sucess = final_pass_meter >= 0
-
-#         return {
-#             "text_response": boss_reply,
-#             "sucess": sucess,
-#             "pass_meter": final_pass_meter
-#         }
-    
 
 
 from typing import TypedDict, Annotated, Sequence
@@ -516,10 +26,13 @@ from concurrent.futures import ThreadPoolExecutor
 load_dotenv()
 app = FastAPI()
 
-# --- session bookkeeping & expiry (shared) ---
-_SESSION_DB: dict = {}            # thread_key -> (db_path, created_at)
-_ENDPOINT_THREAD_MAP: dict = {}   # endpoint -> (thread_key, created_at)
-DB_EXPIRY_SECONDS = 120.0         # 2 minutes expiry for time-based sessions
+_SESSION_DB: dict = {}           
+_ENDPOINT_THREAD_MAP: dict = {}  
+DB_EXPIRY_SECONDS = 120.0        
+
+OLDER_FEMALE = "p231"
+FRIENDLY_COWORKER = "p248"
+RANDOM_VOICES = ["p225", "p227", "p239"]
 
 def _get_or_create_session_db(thread_key: str, prefix: str, force_new: bool = False) -> str:
     now = time.time()
@@ -529,7 +42,6 @@ def _get_or_create_session_db(thread_key: str, prefix: str, force_new: bool = Fa
         path, created = entry
         if (now - created) < DB_EXPIRY_SECONDS and os.path.exists(path):
             return path
-        # expired -> attempt to remove and fall through
         try:
             os.remove(path)
         except Exception:
@@ -560,7 +72,6 @@ def _delete_session_db(thread_key: str):
             os.remove(path)
         except Exception:
             pass
-    # also remove it from endpoint->thread map if present
     for ep, (tk, _) in list(_ENDPOINT_THREAD_MAP.items()):
         if tk == thread_key:
             _ENDPOINT_THREAD_MAP.pop(ep, None)
@@ -575,7 +86,6 @@ def _ensure_thread_key_for_endpoint(endpoint: str, max_age: float = DB_EXPIRY_SE
             _, session_created = session_entry
             if (now - session_created) < max_age and os.path.exists(session_entry[0]):
                 return thread_key
-        # otherwise fall through and create new
     thread_key = f"{endpoint}_{uuid.uuid4().hex[:8]}"
     _ENDPOINT_THREAD_MAP[endpoint] = (thread_key, now)
     return thread_key
@@ -588,7 +98,6 @@ def _get_db_for_endpoint(endpoint: str, prefix: str, force_new: bool = False):
     config = {"configurable": {"thread_id": thread_key}}
     return db_path, config, thread_key
 
-# --- message helpers (centralized) ---
 def _reconstruct_message(m):
     if isinstance(m, BaseMessage):
         return m
@@ -630,11 +139,9 @@ def _first_system_message_text(msgs):
                 return m.get("content") or m.get("text") or ""
     return ""
 
-# --- LLM / TTS executor (kept from original) ---
 llm = ChatOllama(model="mistral:instruct", temperature=0.0)
 _tts_executor = ThreadPoolExecutor(max_workers=3)
 
-# --- Endpoints ---
 
 @app.post("/convince_boss")
 async def convince_boss(audioFile: UploadFile = File(...)):
@@ -679,10 +186,9 @@ Instructions for the roleplay:
             msgs = previous_state.get("messages", [])
             msgs = [_reconstruct_message(m) for m in msgs]
 
-            # Defensive role-check: if saved session's system message doesn't look like boss-role, reset DB
             first_system = _first_system_message_text(msgs)
             if first_system and "role of the boss" not in first_system.lower() and "boss" in first_system.lower() == False:
-                # Not a boss snapshot: reset and start fresh
+            
                 print("[convince_boss] snapshot role mismatch -> resetting session DB")
                 _delete_session_db(thread_key_conv)
                 DB_PATH_CONV, config_conv, thread_key_conv = _get_db_for_endpoint("convince_boss", "checkpointsconv", force_new=True)
@@ -712,7 +218,6 @@ Instructions for the roleplay:
 
                 final_state = graph_app.invoke(previous_state, config_conv)
         else:
-            # no snapshot -> fresh conversation
             print("[convince_boss] Starting new conversation...")
             final_state = graph_app.invoke(seed, config_conv)
 
@@ -734,7 +239,7 @@ Instructions for the roleplay:
 @app.post("/public_speaking")
 async def public_speaking(audioFile: UploadFile = File(...)):
     meeting_topic = "is AI a fad?"
-    max_interactions = 5  # turn-based limit
+    max_interactions = 5  
 
     contents = await audioFile.read()
     text = speech_to_text(contents)
@@ -752,7 +257,6 @@ async def public_speaking(audioFile: UploadFile = File(...)):
         "meeting_topic": meeting_topic,
     }
 
-    # Loop in case we detect a turn-limit exceeded snapshot and need to reset
     while True:
         DB_PATH_PUB, config_pub, thread_key_pub = _get_db_for_endpoint("public_speaking", "checkpointspub")
         with SqliteSaver.from_conn_string(DB_PATH_PUB) as memory:
@@ -766,10 +270,8 @@ async def public_speaking(audioFile: UploadFile = File(...)):
                     print(f"[public_speaking] session reached max turns ({stored_turns}); resetting session DB.")
                     _delete_session_db(thread_key_pub)
                     continue
-            # either no snapshot or still valid -> proceed
             break
 
-    # Proceed using the fresh/validated DB
     DB_PATH_PUB, config_pub, thread_key_pub = _get_db_for_endpoint("public_speaking", "checkpointspub")
     with SqliteSaver.from_conn_string(DB_PATH_PUB) as memory:
         graph_app = public_graph.compile(checkpointer=memory)
@@ -859,9 +361,7 @@ Instructions for the roleplay:
             msgs = previous_state.get("messages", [])
             msgs = [_reconstruct_message(m) for m in msgs]
 
-            # Defensive role-check: ensure snapshot system message looks like coworker role
             first_system = _first_system_message_text(msgs)
-            # crude check: if it's obviously the boss prompt, reset to avoid bleed
             if first_system and ("boss of the user" in first_system.lower() or "role of the boss" in first_system.lower()):
                 print("[play_npc] snapshot role mismatch (found boss content) -> resetting session DB")
                 _delete_session_db(thread_key_npc)
