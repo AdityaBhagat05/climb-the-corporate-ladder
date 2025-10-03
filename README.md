@@ -14,7 +14,7 @@ Climb the Corporate Ladder is a **Gen AI–powered gamified public speaking trai
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 - [About the Project](#-about-the-project)
 - [Who Is It For](#-who-is-it-for)
 - [What Makes It Different](#-what-makes-it-different)
@@ -31,12 +31,12 @@ Climb the Corporate Ladder is a **Gen AI–powered gamified public speaking trai
 
 ---
 
-## 🏢 About the Project
+## About the Project
 Climb the Corporate Ladder is a **gamified training program** that blends **AI-powered feedback, immersive environments, and mini-games** to help individuals improve their public speaking and communication skills.  
 
 ---
 
-## 👥 Who Is It For
+## Who Is It For
 This project is designed for:  
 - Young professionals entering the job market  
 - Students preparing for interviews and networking  
@@ -44,7 +44,7 @@ This project is designed for:
 
 ---
 
-## 🚀 What Makes It Different
+## What Makes It Different
 Unlike traditional workshops and online courses, this project:  
 - Adapts to individual needs  
 - Provides **real-time AI feedback**  
@@ -52,7 +52,7 @@ Unlike traditional workshops and online courses, this project:
 
 ---
 
-## 🌟 Highlights
+## Highlights
 - **LangGraph AI Agents** for dynamic feedback  
 - **AI confidence scoring** with measurable progress  
 - Evaluates **tone, clarity, and assertiveness**  
@@ -60,7 +60,7 @@ Unlike traditional workshops and online courses, this project:
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 1. Audio input from user → transcribed with **OpenAI Whisper**  
 2. Camera & posture analysis with **MediaPipe**  
 3. Text + body data → processed by **Google Gemini (LLM)**  
@@ -70,7 +70,7 @@ Unlike traditional workshops and online courses, this project:
 
 ---
 
-## 🎮 User Experience
+## User Experience
 - Built in **Unity Game Engine**  
 - Immersive environments: **Office, Presentation Hall, Outdoor**  
 - Interactive NPCs with unique personalities & memory  
@@ -78,7 +78,7 @@ Unlike traditional workshops and online courses, this project:
 
 ---
 
-## 🎮 Demo Game Flow
+## Demo Game Flow
 
 ```
 Start 
@@ -97,21 +97,21 @@ End
 ```
 ---
 
-## ✅ Feasibility
+## Feasibility
 - **Technically Feasible**: Uses mature open-source AI tools  
 - **Cost-effective**: Free tiers & open-source options  
 - **Market Ready**: Aligned with EdTech gamification demand  
 
 ---
 
-## ⚠️ Challenges & Risks
+## Challenges & Risks
 - Privacy concerns with voice/video data  
 - AI accuracy for diverse accents  
 - High dev time for branching storylines  
 - Dependency on external APIs  
 
 ---
-## ▶️ How to Run Our Game
+## How to Run Our Game
 
 1. **Download the Code**
    - Go to the GitHub repository and download the project as a `.zip` file.
@@ -178,7 +178,7 @@ End
 
 ---
 
-## 📂 File Structure
+## File Structure
 ```
 ├── .gitignore
 ├── audio_utils.py
@@ -193,7 +193,7 @@ End
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 - **Game Engine**: Unity  
 - **LLM**: Google Gemini  
 - **Speech-to-Text**: OpenAI Whisper  
@@ -204,7 +204,7 @@ End
 
 ---
 
-## 🤝 Contributing
+## Contributing
 Contributions are welcome! Please open an issue or submit a pull request.  
 
 ---
