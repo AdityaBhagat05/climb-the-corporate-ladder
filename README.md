@@ -166,7 +166,7 @@ End
 
 10. **Launch the game**
     - Double-click the Unity `.exe` file to start the game.  
-    - Enjoy your training experience!
+    - Enjoy your fun learning experience!
 
 
 ## 📂 File Structure
