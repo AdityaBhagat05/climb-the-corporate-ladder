@@ -15,7 +15,8 @@ Welcome to the **future of public speaking training**.
 ---
 
 ## Submissions
-Google drive link with unity game files and demo video   --  https://drive.google.com/drive/folders/12A63hzJOqE1TUsGn5YeXlkifZ0HeVErR?usp=sharing
+- Google drive link with unity game files   -  https://drive.google.com/drive/folders/12A63hzJOqE1TUsGn5YeXlkifZ0HeVErR?usp=sharing
+- Google drive link with .exe file and demo video -  https://drive.google.com/drive/folders/1c-oq_U8_P13tZrMTBVBMZl3De_2TbDOE?usp=sharing
 ## Table of Contents
 - [About the Project](#about-the-project)
 - [Who Is It For](#who-is-it-for)
