@@ -255,15 +255,12 @@ def speak(text: str, samplerate: int = 22050, delete_after: bool = True) -> str:
     if not text or not text.strip():
         raise ValueError("Text must be non-empty")
 
-    # create a unique temp file
     wav_path = os.path.join(
         tempfile.gettempdir(), f"tts_{int(time.time()*1000)}.wav"
     )
 
-    # synthesize
     tts_engine.tts_to_file(text=text, file_path=wav_path)
 
-    # play it
     data, sr = sf.read(wav_path, dtype="float32")
     sd.play(data, sr)
     sd.wait()  # block until playback is done
@@ -273,61 +270,3 @@ def speak(text: str, samplerate: int = 22050, delete_after: bool = True) -> str:
 
     return wav_path
 
-# import random
-# import os
-# import tempfile
-# import time
-
-# OLDER_FEMALE = "p231"
-# FRIENDLY_COWORKER = "p248"
-# RANDOM_VOICES = ["p225", "p227", "p239"]
-
-# def _choose_speaker(speaker: str = None, speaker_wav: str = None):
-#     if speaker_wav:
-#         return None, speaker_wav
-#     if speaker:
-#         return speaker, None
-#     try:
-#         if hasattr(tts_engine, "speakers") and tts_engine.speakers:
-#             return random.choice(RANDOM_VOICES) if RANDOM_VOICES else random.choice(tts_engine.speakers), None
-#     except Exception:
-#         pass
-#     return None, None
-
-# def tts_enqueue_chunk(text_chunk: str, *, speaker: str = None, speaker_wav: str = None, samplerate=22050, cleanup=True) -> str:
-#     if not text_chunk or not text_chunk.strip():
-#         return ""
-#     _ensure_playback_worker()
-#     fname = os.path.join(tempfile.gettempdir(), f"tts_stream_{int(time.time()*1000)}.wav")
-#     chosen_speaker, chosen_speaker_wav = _choose_speaker(speaker, speaker_wav)
-#     try:
-#         if chosen_speaker_wav:
-#             tts_engine.tts_to_file(text=text_chunk, speaker_wav=chosen_speaker_wav, file_path=fname)
-#         elif chosen_speaker:
-#             tts_engine.tts_to_file(text=text_chunk, speaker=chosen_speaker, file_path=fname)
-#         else:
-#             tts_engine.tts_to_file(text=text_chunk, file_path=fname)
-#     except Exception as e:
-#         print("TTS synth error:", e)
-#         return ""
-#     _playback_queue.put((fname, cleanup))
-#     return fname
-
-# def text_to_speech(text: str, speaker: str = None, speaker_wav: str = None, samplerate=22050) -> str:
-#     if not text:
-#         return ""
-#     fname = os.path.join(tempfile.gettempdir(), f"tts_{int(time.time()*1000)}.wav")
-#     chosen_speaker, chosen_speaker_wav = _choose_speaker(speaker, speaker_wav)
-#     try:
-#         if chosen_speaker_wav:
-#             tts_engine.tts_to_file(text=text, speaker_wav=chosen_speaker_wav, file_path=fname)
-#         elif chosen_speaker:
-#             tts_engine.tts_to_file(text=text, speaker=chosen_speaker, file_path=fname)
-#         else:
-#             tts_engine.tts_to_file(text=text, file_path=fname)
-#     except Exception as e:
-#         print("TTS synth error:", e)
-#         return ""
-#     _ensure_playback_worker()
-#     _playback_queue.put((fname, True))
-#     return fname
