@@ -10,9 +10,12 @@
 # Climb the Corporate Ladder
 
 Welcome to the **future of public speaking training**.  
+<img width="1496" height="837" alt="Office" src="https://github.com/user-attachments/assets/2987fd14-884e-4959-ac71-1090101e89ab" />
 
 ---
 
+## Submissions
+Google drive link with unity game files and demo video   --  https://drive.google.com/drive/folders/12A63hzJOqE1TUsGn5YeXlkifZ0HeVErR?usp=sharing
 ## Table of Contents
 - [About the Project](#about-the-project)
 - [Who Is It For](#who-is-it-for)
@@ -59,7 +62,15 @@ Unlike traditional workshops and online courses, this project:
 - Measurable results. Based on local tests conducted with a focus group of 10, an average self-assessed **15% improvement** was seen.
 
 ---
+## User Experience
+- Built in **Unity Game Engine**  
+- Immersive environments: **Office, Presentation Hall, Outdoor**  
+- Interactive NPCs with unique personalities & memory  
+- Mini-games to improve English skills (e.g., Hangman)
+<img width="1495" height="835" alt="Outside" src="https://github.com/user-attachments/assets/40808ac9-3df2-4541-b940-4acf61d049da" />
 
+
+---
 ## How It Works
 1. Audio input from user → transcribed with **OpenAI Whisper**  
 2. Camera & posture analysis with **MediaPipe**  
@@ -67,16 +78,10 @@ Unlike traditional workshops and online courses, this project:
 4. LLM replies in character → audio generated via **Coqui-TTS**  
 5. Evaluation node checks responses → updates pass/fail meter  
 6. Conversation continues until time limit → final evaluation  
+<img width="1496" height="837" alt="Auditorium" src="https://github.com/user-attachments/assets/e6aa7f7d-0ec0-4113-9fea-fe850cea0a5d" />
 
 ---
 
-## User Experience
-- Built in **Unity Game Engine**  
-- Immersive environments: **Office, Presentation Hall, Outdoor**  
-- Interactive NPCs with unique personalities & memory  
-- Mini-games to improve English skills (e.g., Hangman)  
-
----
 
 ## Demo Game Flow
 
