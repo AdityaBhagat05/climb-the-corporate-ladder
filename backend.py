@@ -30,9 +30,6 @@ _SESSION_DB: dict = {}
 _ENDPOINT_THREAD_MAP: dict = {}  
 DB_EXPIRY_SECONDS = 120.0        
 
-OLDER_FEMALE = "p231"
-FRIENDLY_COWORKER = "p248"
-RANDOM_VOICES = ["p225", "p227", "p239"]
 
 def _get_or_create_session_db(thread_key: str, prefix: str, force_new: bool = False) -> str:
     now = time.time()
@@ -174,7 +171,6 @@ Instructions for the roleplay:
         "pass_meter": 0
     }
 
-    # automatic session DB for this endpoint
     DB_PATH_CONV, config_conv, thread_key_conv = _get_db_for_endpoint("convince_boss", "checkpointsconv")
 
     with SqliteSaver.from_conn_string(DB_PATH_CONV) as memory:
