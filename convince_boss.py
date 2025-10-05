@@ -245,12 +245,14 @@ def posture_info_node(state: Dict) -> Dict:
     received_any = False
 
     if cap is None or not cap.isOpened() or pose_session is None:
+ 
         print("[posture_info_node] camera not available this tick")
     else:
         ret, frame = cap.read()
         if not ret:
             print("[posture_info_node] camera read failed this tick")
         else:
+          
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image.flags.writeable = False
             results = pose_session.process(image)
@@ -283,11 +285,13 @@ def posture_info_node(state: Dict) -> Dict:
                 except Exception as e:
                     print("[posture_info_node] processing error:", repr(e))
             else:
+               
                 print("[posture_info_node] no landmarks detected this tick")
 
     if received_any:
         state.setdefault("posture_history", []).append(state["last_posture"])
     else:
+  
         last = state.get("last_posture")
         if last and (time.time() - last.get("received_time", 0.0) < STALE_SECONDS):
             state.setdefault("posture_history", []).append(last)

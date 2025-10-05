@@ -171,7 +171,6 @@ Instructions for the roleplay:
         "pass_meter": 2
     }
 
-    # automatic session DB for this endpoint
     DB_PATH_CONV, config_conv, thread_key_conv = _get_db_for_endpoint("convince_boss", "checkpointsconv")
 
     with SqliteSaver.from_conn_string(DB_PATH_CONV) as memory:
