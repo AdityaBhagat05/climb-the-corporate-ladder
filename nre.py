@@ -41,7 +41,7 @@ def classify_posture(landmarks):
     # Angle: Nose–Shoulder–Hip (forward lean detection)
     angle = calculate_angle(nose, shoulder, hip)
 
-    if angle > 176:  # almost straight
+    if angle > 170:  # almost straight
         sock.sendto(b'Upright', serverAddressPort)
         return "Upright"
     else:
