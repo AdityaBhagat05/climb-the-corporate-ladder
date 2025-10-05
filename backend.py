@@ -30,9 +30,6 @@ _SESSION_DB: dict = {}
 _ENDPOINT_THREAD_MAP: dict = {}  
 DB_EXPIRY_SECONDS = 120.0        
 
-OLDER_FEMALE = "p231"
-FRIENDLY_COWORKER = "p248"
-RANDOM_VOICES = ["p225", "p227", "p239"]
 
 def _get_or_create_session_db(thread_key: str, prefix: str, force_new: bool = False) -> str:
     now = time.time()
@@ -145,7 +142,7 @@ _tts_executor = ThreadPoolExecutor(max_workers=3)
 
 @app.post("/convince_boss")
 async def convince_boss(audioFile: UploadFile = File(...)):
-    meeting_topic = "is AI a fad?"
+    meeting_topic = "Future of Artificial Intelligence?"
     contents = await audioFile.read()
     text = speech_to_text(contents)
 
@@ -171,7 +168,7 @@ Instructions for the roleplay:
         "posture_history": [],
         "evaluation_done": False,
         "start_time": time.time(),
-        "pass_meter": 0
+        "pass_meter": 2
     }
 
     # automatic session DB for this endpoint
@@ -238,7 +235,7 @@ Instructions for the roleplay:
 
 @app.post("/public_speaking")
 async def public_speaking(audioFile: UploadFile = File(...)):
-    meeting_topic = "is AI a fad?"
+    meeting_topic = "Future of Artificial Intelligence?"
     max_interactions = 5  
 
     contents = await audioFile.read()
@@ -322,7 +319,7 @@ async def public_speaking(audioFile: UploadFile = File(...)):
 
 @app.post("/play_npc")
 async def play_npc(audioFile: UploadFile = File(...)):
-    meeting_topic = "is AI a fad?"
+    meeting_topic = "future of artificial intelligence?"
     contents = await audioFile.read()
     text = speech_to_text(contents)
 

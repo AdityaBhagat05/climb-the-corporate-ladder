@@ -62,7 +62,7 @@ def llm_node(state: publicAgentState) -> publicAgentState:
     first_human_msg = _find_first_human(messages)
     presentation = _msg_content(first_human_msg) if first_human_msg is not None else ""
     system_instruction = (
-        "You are an audience member in a public presentation. OUTPUT EXACTLY ONE QUESTION ONLY. "
+        "You are an audience member in a public presentation. OUTPUT EXACTLY ONE QUESTION ONLY on the future of artificial intelligence. "
         "One sentence, <=25 words, end with a question mark, nothing else. "
         "Ask questions about different aspects of the original presentation topic. "
         "Don't just ask follow-ups to the user's last response. "

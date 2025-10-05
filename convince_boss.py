@@ -220,17 +220,14 @@ def posture_info_node(state: Dict) -> Dict:
     Single-tick node: grab one frame (if camera is available), run mediapipe pose once,
     compute posture, and update state. No UDP involved.
     """
-    # ensure minimal keys exist
     state.setdefault("posture_history", [])
     state.setdefault("messages", [])
     state.setdefault("audio_history", [])
     state.setdefault("start_time", time.time())
 
-    # lazy-init the camera capture and mediapipe session
     if "posture_cap" not in state:
         try:
             cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) if hasattr(cv2, "CAP_DSHOW") else cv2.VideoCapture(0)
-            # small safety: set a modest resolution to reduce CPU
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             state["posture_cap"] = cap
@@ -247,16 +244,13 @@ def posture_info_node(state: Dict) -> Dict:
 
     received_any = False
 
-    # Try to grab a single frame and process it.
     if cap is None or not cap.isOpened() or pose_session is None:
-        # can't use camera → behave as no-new-data
         print("[posture_info_node] camera not available this tick")
     else:
         ret, frame = cap.read()
         if not ret:
             print("[posture_info_node] camera read failed this tick")
         else:
-            # convert and run mediapipe once (same as before)
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image.flags.writeable = False
             results = pose_session.process(image)
@@ -267,7 +261,6 @@ def posture_info_node(state: Dict) -> Dict:
                     landmarks = results.pose_landmarks.landmark
                     payload, angle = _classify_from_landmarks(landmarks)
                     now = time.time()
-                    # replicate structure you used previously:
                     if payload == "upright":
                         data = {
                             "posture": "upright",
@@ -290,23 +283,18 @@ def posture_info_node(state: Dict) -> Dict:
                 except Exception as e:
                     print("[posture_info_node] processing error:", repr(e))
             else:
-                # No landmarks detected — treat as no new packet this tick
                 print("[posture_info_node] no landmarks detected this tick")
 
-    # Only append to history if we actually received new data this tick.
     if received_any:
         state.setdefault("posture_history", []).append(state["last_posture"])
     else:
-        # treat last posture as fresh for a short time window (same semantics as before)
         last = state.get("last_posture")
         if last and (time.time() - last.get("received_time", 0.0) < STALE_SECONDS):
             state.setdefault("posture_history", []).append(last)
             print(f"[posture_info_node] (fresh) {last}")
         else:
-            # do not append a spurious 'unknown'
             pass
 
-    # Return the snapshot expected by the rest of your system
     return {
         "messages": state.get("messages", []),
         "posture_history": state.get("posture_history", []),
