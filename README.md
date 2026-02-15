@@ -214,7 +214,7 @@ End
 - **TTS**: Coqui-TTS  
 - **Video Analysis**: MediaPipe  
 - **Backend**: FastAPI (Uvicorn)  
-- **Language**: Python  
+- **Language**: Python
 
 ---
 
